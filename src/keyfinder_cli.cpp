@@ -6,8 +6,10 @@
 extern "C"
 {
 #include <libavutil/avutil.h>
+#include <libavutil/opt.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#include <libavresample/avresample.h>
 }
 
 std::map<KeyFinder::key_t, std::string> key_map =
@@ -99,6 +101,32 @@ int main(int argc, char** argv)
     if (avcodec_open2(codec_context, codec, nullptr) < 0)
         throw std::runtime_error("Unable to open the codec");
 
+    // Setup the audio resample context in situations where we need to resample
+    // the audio stream samples into 16bit PCM data
+    std::shared_ptr<AVAudioResampleContext> resample_context(
+            avresample_alloc_context(),
+            [](AVAudioResampleContext* c) { avresample_free(&c); });
+    auto resample_context_ptr = resample_context.get();
+
+    // The channel_layout may need to be populated from the number of channels.
+    // This is usually the case with formats using the pcm_16* codecs where
+    // it's not nessicarily possible to determine the channel layout. In these
+    // situations we can use the default channel_layout
+    if ( ! codec_context->channel_layout)
+    {
+        codec_context->channel_layout = av_get_default_channel_layout(codec_context->channels);
+    }
+
+    av_opt_set_int(resample_context_ptr, "in_sample_fmt",      codec_context->sample_fmt,     0);
+    av_opt_set_int(resample_context_ptr, "in_sample_rate",     codec_context->sample_rate,    0);
+    av_opt_set_int(resample_context_ptr, "in_channel_layout",  codec_context->channel_layout, 0);
+    av_opt_set_int(resample_context_ptr, "out_sample_fmt",     AV_SAMPLE_FMT_S16,             0);
+    av_opt_set_int(resample_context_ptr, "out_sample_rate",    codec_context->sample_rate,    0);
+    av_opt_set_int(resample_context_ptr, "out_channel_layout", codec_context->channel_layout, 0);
+
+    if (avresample_open(resample_context_ptr) < 0)
+        throw std::runtime_error("Unable to open the resample context");
+
     // Setup the KeyFinder AudioData object
     KeyFinder::AudioData audio;
 
@@ -151,17 +179,28 @@ int main(int argc, char** argv)
         packet.size -= current_packet_offset;
         packet.data += current_packet_offset;
 
+        // The KeyFinder::AudioData object expects non-planar 16 bit PCM data.
+        // If we didn't decode audio data in that format we have to re-sample
+        if (codec_context->sample_fmt != AV_SAMPLE_FMT_S16)
+        {
+            std::shared_ptr<AVFrame> converted_frame(av_frame_alloc(), &av_free);
+
+            converted_frame->channel_layout = audio_frame->channel_layout;
+            converted_frame->sample_rate = audio_frame->sample_rate;
+            converted_frame->format = AV_SAMPLE_FMT_S16;
+
+            if (avresample_convert_frame(resample_context_ptr, converted_frame.get(), audio_frame.get()) < 0)
+                throw std::runtime_error("Unable to resample audio into 16bit PCM data");
+
+            audio_frame.swap(converted_frame);
+        }
+
         // Since we we're dealing with 16bit samples we need to convert our
         // data pointer to a int16_t (from int8_t). This also means that we
         // need to halve our sample count since the sample count expected one
         // byte per sample, instead of two.
         int16_t* sample_data = (int16_t *) audio_frame->extended_data[0];
         int sample_count = audio_frame->linesize[0] / 2;
-
-        // The KeyFinder::AudioData object expects non-planar 16 bit PCM data.
-        // If we didn't decode audio data in that format we have to re-sample
-        if (codec_context->sample_fmt != AV_SAMPLE_FMT_S16)
-            throw std::runtime_error("Doesn't handle resampling yet");
 
         // Populate the KeyFinder::AudioData object with the samples
         int old_sample_count = audio.getSampleCount();

@@ -4,6 +4,7 @@ LIBS += -lboost_system
 LIBS += -lavcodec
 LIBS += -lavformat
 LIBS += -lavutil
+LIBS += -lavresample
 
 CONFIG += c++11
 
