@@ -14,6 +14,8 @@ extern "C"
 
 #include "key_notations.h"
 
+const int BAD_PACKET_THRESHOLD = 100;
+
 /**
  * The "safe" AVPacket wrapper will handle memory management of the packet,
  * ensuring that if an instance of this packet wrapper is destroyed the
@@ -155,6 +157,7 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
     std::shared_ptr<AVFrame> audio_frame(av_frame_alloc(), &av_free);
 
     int current_packet_offset = 0;
+    int back_packet_count = 0;
 
     // Read all stream samples into the AudioData container
     while (true)
@@ -175,8 +178,17 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
         const auto processed_size = avcodec_decode_audio4(codec_context,
                 audio_frame.get(), &frame_available, &packet.inner_packet);
 
+        // Bad packet. Maybe we can ignore it
         if (processed_size < 0)
-            throw std::runtime_error("Unable to process the encoded audio data");
+        {
+            if (++back_packet_count > BAD_PACKET_THRESHOLD)
+                throw std::runtime_error("Too many bad packets");
+
+            current_packet_offset    = 0;
+            packet.inner_packet.size = 0;
+
+            continue;
+        }
 
         current_packet_offset += processed_size;
 
