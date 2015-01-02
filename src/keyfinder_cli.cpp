@@ -39,16 +39,30 @@ struct SafeAVPacket
         }
     }
 
-    void fill_packet(AVFormatContext* format_context)
+    /**
+     * Read into this packet from the format_context. A stream index should
+     * also be provided so that the packet knows what stream to read from.
+     *
+     * @param format_context The format context to read data from
+     * @param stream_index   The index of the stream we want data from
+     */
+    void read(AVFormatContext* format_context, int stream_index)
     {
-        if (inner_packet.data)
+        while (true)
         {
-            av_free_packet(&inner_packet);
-        }
+            if (inner_packet.data)
+            {
+                av_free_packet(&inner_packet);
+            }
 
-        if (av_read_frame(format_context, &inner_packet) < 0)
-        {
-            inner_packet.data = nullptr;
+            if (av_read_frame(format_context, &inner_packet) < 0)
+            {
+                inner_packet.data = nullptr;
+            }
+
+            // Stop reading once we've read a packet from this stream
+            if (inner_packet.stream_index == stream_index)
+                break;
         }
     }
 };
@@ -145,14 +159,7 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
         // Read another packet once we've consumed all of the previous one
         if (current_packet_offset >= packet.inner_packet.size)
         {
-            while (true)
-            {
-                packet.fill_packet(format_ctx_ptr);
-
-                // Stop reading once we've read a packet from this stream
-                if (packet.inner_packet.stream_index == audio_stream->index)
-                    break;
-            }
+            packet.read(format_ctx_ptr, audio_stream->index);
 
             current_packet_offset = 0;
 
