@@ -66,11 +66,11 @@ int main(int argc, char** argv)
 
     // Open the file for decoding
     if (avformat_open_input(&format_ptr, file_path, nullptr, nullptr) < 0)
-        throw std::runtime_error("Unable to load media file (probably invalid format).");
+        throw std::runtime_error("Unable to load media file (probably invalid format)");
 
     // Deterine stream information
     if (avformat_find_stream_info(format_ptr, nullptr) < 0)
-        throw std::runtime_error("Unable to get stream info.");
+        throw std::runtime_error("Unable to get stream info");
 
     const AVStream* audio_stream = nullptr;
 
@@ -199,7 +199,7 @@ int main(int argc, char** argv)
         // data pointer to a int16_t (from int8_t). This also means that we
         // need to halve our sample count since the sample count expected one
         // byte per sample, instead of two.
-        int16_t* sample_data = (int16_t *) audio_frame->extended_data[0];
+        int16_t* sample_data = (int16_t*) audio_frame->extended_data[0];
         int sample_count = audio_frame->linesize[0] / 2;
 
         // Populate the KeyFinder::AudioData object with the samples
