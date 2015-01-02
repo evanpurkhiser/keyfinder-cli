@@ -14,6 +14,44 @@ extern "C"
 
 #include "key_notations.h"
 
+/**
+ * The "safe" AVPacket wrapper will handle memory managment of the packet,
+ * ensuring that if an instance of this packet wrapper is destroyed the
+ * containing packet is freed from memory.
+ */
+struct SafeAVPacket
+{
+    AVPacket inner_packet;
+
+    SafeAVPacket()
+    {
+        av_init_packet(&inner_packet);
+
+        inner_packet.data = nullptr;
+        inner_packet.size = 0;
+    }
+
+    ~SafeAVPacket()
+    {
+        if (inner_packet.data)
+        {
+            av_free_packet(&inner_packet);
+        }
+    }
+
+    void fill_packet(AVFormatContext* format_context)
+    {
+        if (inner_packet.data)
+        {
+            av_free_packet(&inner_packet);
+        }
+
+        if (av_read_frame(format_context, &inner_packet) < 0)
+        {
+            inner_packet.data = nullptr;
+        }
+    }
+};
 
 int main(int argc, char** argv)
 {
@@ -102,51 +140,50 @@ int main(int argc, char** argv)
     audio.setFrameRate((unsigned int) codec_context->sample_rate);
     audio.setChannels(codec_context->channels);
 
-    // Error checking from this point on becomes... lax
-
-    AVPacket packet;
-    packet.size = 0;
-    int current_packet_offset = 0;
+    SafeAVPacket packet;
     std::shared_ptr<AVFrame> audio_frame(av_frame_alloc(), &av_free);
+
+    int current_packet_offset = 0;
 
     // Read all stream samples into the AudioData container
     while (true)
     {
-        // Only read packets if we need to
-        if (current_packet_offset >= packet.size)
+        if (current_packet_offset >= packet.inner_packet.size)
         {
-            // Read in a single packet until we no longer can
-            if (av_read_frame(format_ptr, &packet) < 0)
-                break;
+            while (true)
+            {
+                packet.fill_packet(format_ptr);
 
-            // Ignore packets from other streams
-            if (packet.stream_index != audio_stream->index)
-                continue;
+                // Stop reading once we've read a packet from this stream
+                if (packet.inner_packet.stream_index == audio_stream->index)
+                    break;
+            }
 
             current_packet_offset = 0;
+
+            // We're all done once we have no more packets to read
+            if (packet.inner_packet.size <= 0)
+                break;
         }
 
         int frame_available = 0;
         const auto processed_size = avcodec_decode_audio4(codec_context,
-                audio_frame.get(), &frame_available, &packet);
+                audio_frame.get(), &frame_available, &packet.inner_packet);
 
         if (processed_size < 0)
             throw std::runtime_error("Unable to process the encoded audio data");
-
-        // Not enough data to read the frame. Keep going
-        if ( ! frame_available)
-        {
-            current_packet_offset = 0;
-            continue;
-        }
 
         current_packet_offset += processed_size;
 
         // Seek The packet forward for the ammount of data we've read. If there
         // is still data left in the packet that wasn't decoded we will handle
         // that next interation of this loop
-        packet.size -= current_packet_offset;
-        packet.data += current_packet_offset;
+        packet.inner_packet.size -= current_packet_offset;
+        packet.inner_packet.data += current_packet_offset;
+
+        // Not enough data to read the frame. Keep going
+        if ( ! frame_available)
+            continue;
 
         // The KeyFinder::AudioData object expects non-planar 16 bit PCM data.
         // If we didn't decode audio data in that format we have to re-sample
