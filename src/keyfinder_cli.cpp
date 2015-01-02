@@ -201,7 +201,7 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
         // need to halve our sample count since the sample count expected one
         // byte per sample, instead of two.
         int16_t* sample_data = (int16_t*) audio_frame->extended_data[0];
-        int sample_count = audio_frame->linesize[0] / 2;
+        unsigned int sample_count = audio_frame->linesize[0] / 2;
 
         // Populate the KeyFinder::AudioData object with the samples
         int old_sample_count = audio.getSampleCount();
@@ -209,7 +209,7 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
         audio.resetIterators();
         audio.advanceWriteIterator(old_sample_count);
 
-        for (int i = 0; i < sample_count; ++i)
+        for (unsigned int i = 0; i < sample_count; ++i)
         {
             audio.setSampleAtWriteIterator((float) sample_data[i]);
             audio.advanceWriteIterator();
