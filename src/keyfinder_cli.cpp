@@ -15,7 +15,7 @@ extern "C"
 #include "key_notations.h"
 
 /**
- * The "safe" AVPacket wrapper will handle memory managment of the packet,
+ * The "safe" AVPacket wrapper will handle memory management of the packet,
  * ensuring that if an instance of this packet wrapper is destroyed the
  * containing packet is freed from memory.
  */
@@ -55,31 +55,33 @@ struct SafeAVPacket
 
 /**
  * Fill an instance of KeyFinder::AudioData with the audio data from a file.
+ * This does the ffmpeg dance to decode any type of audio stream into PCM_16
+ * samples.
  */
 void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
 {
-    // Initalize AV format/codec things once
+    // Initialize AV format/codec things once
     static std::once_flag init_flag;
     std::call_once(init_flag, []() { av_register_all(); });
 
-    std::shared_ptr<AVFormatContext> format(avformat_alloc_context(), &avformat_free_context);
-    auto format_ptr = format.get();
+    std::shared_ptr<AVFormatContext> format_context(avformat_alloc_context(), &avformat_free_context);
+    auto format_ctx_ptr = format_context.get();
 
     // Open the file for decoding
-    if (avformat_open_input(&format_ptr, file_path, nullptr, nullptr) < 0)
+    if (avformat_open_input(&format_ctx_ptr, file_path, nullptr, nullptr) < 0)
         throw std::runtime_error("Unable to load media file (probably invalid format)");
 
-    // Deterine stream information
-    if (avformat_find_stream_info(format_ptr, nullptr) < 0)
+    // Determine stream information
+    if (avformat_find_stream_info(format_ctx_ptr, nullptr) < 0)
         throw std::runtime_error("Unable to get stream info");
 
     const AVStream* audio_stream = nullptr;
 
     // Get the audio stream from the context. We have to look through all of
     // the streams, we pick the first one that is recognized as an audio stream
-    for (unsigned int i = 0; i < format->nb_streams; ++i)
+    for (unsigned int i = 0; i < format_context->nb_streams; ++i)
     {
-        auto stream = format->streams[i];
+        auto stream = format_context->streams[i];
 
         if (stream->codec->codec_type == AVMEDIA_TYPE_AUDIO)
         {
@@ -107,7 +109,7 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
     std::shared_ptr<AVAudioResampleContext> resample_context(
             avresample_alloc_context(),
             [](AVAudioResampleContext* c) { avresample_free(&c); });
-    auto resample_context_ptr = resample_context.get();
+    auto resample_ctx_ptr = resample_context.get();
 
     // The channel_layout may need to be populated from the number of channels.
     // This is usually the case with formats using the pcm_16* codecs where
@@ -118,14 +120,14 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
         codec_context->channel_layout = av_get_default_channel_layout(codec_context->channels);
     }
 
-    av_opt_set_int(resample_context_ptr, "in_sample_fmt",      codec_context->sample_fmt,     0);
-    av_opt_set_int(resample_context_ptr, "in_sample_rate",     codec_context->sample_rate,    0);
-    av_opt_set_int(resample_context_ptr, "in_channel_layout",  codec_context->channel_layout, 0);
-    av_opt_set_int(resample_context_ptr, "out_sample_fmt",     AV_SAMPLE_FMT_S16,             0);
-    av_opt_set_int(resample_context_ptr, "out_sample_rate",    codec_context->sample_rate,    0);
-    av_opt_set_int(resample_context_ptr, "out_channel_layout", codec_context->channel_layout, 0);
+    av_opt_set_int(resample_ctx_ptr, "in_sample_fmt",      codec_context->sample_fmt,     0);
+    av_opt_set_int(resample_ctx_ptr, "in_sample_rate",     codec_context->sample_rate,    0);
+    av_opt_set_int(resample_ctx_ptr, "in_channel_layout",  codec_context->channel_layout, 0);
+    av_opt_set_int(resample_ctx_ptr, "out_sample_fmt",     AV_SAMPLE_FMT_S16,             0);
+    av_opt_set_int(resample_ctx_ptr, "out_sample_rate",    codec_context->sample_rate,    0);
+    av_opt_set_int(resample_ctx_ptr, "out_channel_layout", codec_context->channel_layout, 0);
 
-    if (avresample_open(resample_context_ptr) < 0)
+    if (avresample_open(resample_ctx_ptr) < 0)
         throw std::runtime_error("Unable to open the resample context");
 
     // Prepare the KeyFinder::AudioData object
@@ -140,11 +142,12 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
     // Read all stream samples into the AudioData container
     while (true)
     {
+        // Read another packet once we've consumed all of the previous one
         if (current_packet_offset >= packet.inner_packet.size)
         {
             while (true)
             {
-                packet.fill_packet(format_ptr);
+                packet.fill_packet(format_ctx_ptr);
 
                 // Stop reading once we've read a packet from this stream
                 if (packet.inner_packet.stream_index == audio_stream->index)
@@ -187,7 +190,7 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
             converted_frame->sample_rate = audio_frame->sample_rate;
             converted_frame->format = AV_SAMPLE_FMT_S16;
 
-            if (avresample_convert_frame(resample_context_ptr, converted_frame.get(), audio_frame.get()) < 0)
+            if (avresample_convert_frame(resample_ctx_ptr, converted_frame.get(), audio_frame.get()) < 0)
                 throw std::runtime_error("Unable to resample audio into 16bit PCM data");
 
             audio_frame.swap(converted_frame);
@@ -222,19 +225,14 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    // File path of the file we want to determine the key of
-    const char* file_path = argv[1];
-
+    KeyFinder::KeyFinder key_finder;
     KeyFinder::AudioData audio_data;
 
-    fill_audio_data(file_path, audio_data);
-
-    KeyFinder::KeyFinder key_finder;
+    fill_audio_data(argv[1], audio_data);
 
     KeyFinder::key_t key = key_finder.keyOfAudio(audio_data).globalKeyEstimate;
 
-    // Only return a key when we don't have silence
-    // Rule 12: Be quiet!
+    // Only return a key when we don't have silence - rule 12: Be quiet!
     if (key != KeyFinder::SILENCE)
     {
         std::cout << KeyNotation::camelot[key] << std::endl;
