@@ -152,14 +152,19 @@ int main(int argc, char** argv)
         if (codec_context->sample_fmt != AV_SAMPLE_FMT_S16)
             throw std::runtime_error("Doesn't handle resampling yet");
 
-        int16_t* sample_data = (int16_t *) av_frame->data[0];
+        // Since we we're dealing with 16bit samples we need to convert our
+        // data pointer to a int16_t (from int8_t). This also means that we
+        // need to halve our sample count since the sample count expected one
+        // byte per sample, instead of two.
+        int16_t* sample_data = (int16_t *) av_frame->extended_data[0];
+        int sample_count = av_frame->linesize[0] / 2;
 
-        int oldSampleCount = audio.getSampleCount();
-        audio.addToSampleCount(av_frame->linesize[0]*2);
+        int old_sample_count = audio.getSampleCount();
+        audio.addToSampleCount(sample_count);
         audio.resetIterators();
-        audio.advanceWriteIterator(oldSampleCount);
+        audio.advanceWriteIterator(old_sample_count);
 
-        for (int i = 0; i < av_frame->linesize[0]*2; ++i)
+        for (int i = 0; i < sample_count; ++i)
         {
             audio.setSampleAtWriteIterator((float) sample_data[i]);
             audio.advanceWriteIterator();
