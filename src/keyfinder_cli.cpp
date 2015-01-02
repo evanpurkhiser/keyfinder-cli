@@ -71,6 +71,9 @@ struct SafeAVPacket
  * Fill an instance of KeyFinder::AudioData with the audio data from a file.
  * This does the ffmpeg dance to decode any type of audio stream into PCM_16
  * samples.
+ *
+ * @param file_path The file to read audio data from
+ * @param audio     The KeyFinder AudioData container to fill
  */
 void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
 {
