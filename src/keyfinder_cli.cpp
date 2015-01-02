@@ -12,39 +12,8 @@ extern "C"
 #include <libavresample/avresample.h>
 }
 
-std::map<KeyFinder::key_t, std::string> key_map =
-{
-    {KeyFinder::A_MAJOR,       "A" }, {KeyFinder::A_MINOR,       "Am" },
-    {KeyFinder::B_FLAT_MAJOR,  "B" }, {KeyFinder::B_FLAT_MINOR,  "Bbm"},
-    {KeyFinder::B_MAJOR,       "B" }, {KeyFinder::B_MINOR,       "Bm" },
-    {KeyFinder::C_MAJOR,       "C" }, {KeyFinder::C_MINOR,       "Cm" },
-    {KeyFinder::D_FLAT_MAJOR,  "Db"}, {KeyFinder::D_FLAT_MINOR,  "Dbm"},
-    {KeyFinder::D_MAJOR,       "D" }, {KeyFinder::D_MINOR,       "Dm" },
-    {KeyFinder::E_FLAT_MAJOR,  "Eb"}, {KeyFinder::E_FLAT_MINOR,  "Ebm"},
-    {KeyFinder::E_MAJOR,       "E" }, {KeyFinder::E_MINOR,       "Em" },
-    {KeyFinder::F_MAJOR,       "F" }, {KeyFinder::F_MINOR,       "Em" },
-    {KeyFinder::G_FLAT_MAJOR,  "Gb"}, {KeyFinder::G_FLAT_MINOR,  "Gbm"},
-    {KeyFinder::G_MAJOR,       "G" }, {KeyFinder::G_MINOR,       "Gm" },
-    {KeyFinder::A_FLAT_MAJOR,  "Ab"}, {KeyFinder::A_FLAT_MINOR,  "Abm"},
-    {KeyFinder::SILENCE,   "Silent"},
-};
+#include "key_notations.h"
 
-std::map<KeyFinder::key_t, std::string> camelot_map =
-{
-    {KeyFinder::A_MAJOR,       "11B"}, {KeyFinder::A_MINOR,       "8A" },
-    {KeyFinder::B_FLAT_MAJOR,  "6B" }, {KeyFinder::B_FLAT_MINOR,  "3A" },
-    {KeyFinder::B_MAJOR,       "1B" }, {KeyFinder::B_MINOR,       "10A"},
-    {KeyFinder::C_MAJOR,       "8B" }, {KeyFinder::C_MINOR,       "5A" },
-    {KeyFinder::D_FLAT_MAJOR,  "3B" }, {KeyFinder::D_FLAT_MINOR,  "12A"},
-    {KeyFinder::D_MAJOR,       "10B"}, {KeyFinder::D_MINOR,       "7A" },
-    {KeyFinder::E_FLAT_MAJOR,  "5B" }, {KeyFinder::E_FLAT_MINOR,  "2A" },
-    {KeyFinder::E_MAJOR,       "12B"}, {KeyFinder::E_MINOR,       "9A" },
-    {KeyFinder::F_MAJOR,       "7B" }, {KeyFinder::F_MINOR,       "4A" },
-    {KeyFinder::G_FLAT_MAJOR,  "2B" }, {KeyFinder::G_FLAT_MINOR,  "11A"},
-    {KeyFinder::G_MAJOR,       "9B" }, {KeyFinder::G_MINOR,       "6A" },
-    {KeyFinder::A_FLAT_MAJOR,  "4B" }, {KeyFinder::A_FLAT_MINOR,  "1A" },
-    {KeyFinder::SILENCE,    "Silent"},
-};
 
 int main(int argc, char** argv)
 {
@@ -220,7 +189,12 @@ int main(int argc, char** argv)
 
     KeyFinder::key_t result = key_finder.keyOfAudio(audio).globalKeyEstimate;
 
-    std::cout << key_map[result] << std::endl;
+    // Only return a key when we don't have silence
+    // Rule 12: Be quiet!
+    if (result != KeyFinder::SILENCE)
+    {
+        std::cout << KeyNotation::camelot[result] << std::endl;
+    }
 
     return 0;
 }

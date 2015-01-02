@@ -8,6 +8,8 @@ LIBS += -lavresample
 
 CONFIG += c++11
 
+HEADERS = src/key_notations.h
+
 SOURCES = src/keyfinder_cli.cpp
 
 TARGET  = keyfinder-cli
