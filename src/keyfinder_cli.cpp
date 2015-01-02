@@ -3,7 +3,8 @@
 #include <keyfinder/keyfinder.h>
 #include <keyfinder/constants.h>
 
-extern "C"{
+extern "C"
+{
 #include <libavutil/avutil.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -58,24 +59,25 @@ int main(int argc, char** argv)
     static std::once_flag init_flag;
     std::call_once(init_flag, []() { av_register_all(); });
 
-    // Setup the avFormat context pointer
-    std::shared_ptr<AVFormatContext> av_format(avformat_alloc_context(), &avformat_free_context);
-    auto av_format_ptr = av_format.get();
+    std::shared_ptr<AVFormatContext> format(avformat_alloc_context(), &avformat_free_context);
+    auto format_ptr = format.get();
 
     // Open the file for decoding
-    if (avformat_open_input(&av_format_ptr, file_path, nullptr, nullptr) < 0)
+    if (avformat_open_input(&format_ptr, file_path, nullptr, nullptr) < 0)
         throw std::runtime_error("Unable to load media file (probably invalid format).");
 
     // Deterine stream information
-    if (avformat_find_stream_info(av_format_ptr, nullptr) < 0)
+    if (avformat_find_stream_info(format_ptr, nullptr) < 0)
         throw std::runtime_error("Unable to get stream info.");
 
     // Get the audio stream from the context
     AVStream* audio_stream = nullptr;
 
-    for (unsigned int i = 0; i < av_format->nb_streams; ++i)
+    // Get the audio stream from the context. We have to look through all of
+    // the streams, we pick the first one that is recognized as an audio stream
+    for (unsigned int i = 0; i < format->nb_streams; ++i)
     {
-        auto stream = av_format->streams[i];
+        auto stream = format->streams[i];
 
         if (stream->codec->codec_type == AVMEDIA_TYPE_AUDIO)
         {
@@ -109,7 +111,7 @@ int main(int argc, char** argv)
     AVPacket packet;
     packet.size = 0;
     int current_packet_offset = 0;
-    std::shared_ptr<AVFrame> av_frame(av_frame_alloc(), &av_free);
+    std::shared_ptr<AVFrame> audio_frame(av_frame_alloc(), &av_free);
 
     // Read all stream samples into the AudioData container
     while (true)
@@ -118,7 +120,7 @@ int main(int argc, char** argv)
         if (current_packet_offset >= packet.size)
         {
             // Read in a single packet until we no longer can
-            if (av_read_frame(av_format_ptr, &packet) < 0)
+            if (av_read_frame(format_ptr, &packet) < 0)
                 break;
 
             // Ignore packets from other streams
@@ -128,37 +130,41 @@ int main(int argc, char** argv)
             current_packet_offset = 0;
         }
 
-        if (current_packet_offset > 0)
-            std::cout << "skipping read!" << std::endl;
-
-
-
-
         int frame_available = 0;
         const auto processed_size = avcodec_decode_audio4(codec_context,
-                av_frame.get(), &frame_available, &packet);
-
-        if (!frame_available)
-            continue;
+                audio_frame.get(), &frame_available, &packet);
 
         if (processed_size < 0)
             throw std::runtime_error("Unable to process the encoded audio data");
 
+        // Not enough data to read the frame. Keep going
+        if ( ! frame_available)
+        {
+            current_packet_offset = 0;
+            continue;
+        }
+
         current_packet_offset += processed_size;
 
-        packet.size -= processed_size;
-        packet.data += processed_size;
-
-        if (codec_context->sample_fmt != AV_SAMPLE_FMT_S16)
-            throw std::runtime_error("Doesn't handle resampling yet");
+        // Seek The packet forward for the ammount of data we've read. If there
+        // is still data left in the packet that wasn't decoded we will handle
+        // that next interation of this loop
+        packet.size -= current_packet_offset;
+        packet.data += current_packet_offset;
 
         // Since we we're dealing with 16bit samples we need to convert our
         // data pointer to a int16_t (from int8_t). This also means that we
         // need to halve our sample count since the sample count expected one
         // byte per sample, instead of two.
-        int16_t* sample_data = (int16_t *) av_frame->extended_data[0];
-        int sample_count = av_frame->linesize[0] / 2;
+        int16_t* sample_data = (int16_t *) audio_frame->extended_data[0];
+        int sample_count = audio_frame->linesize[0] / 2;
 
+        // The KeyFinder::AudioData object expects non-planar 16 bit PCM data.
+        // If we didn't decode audio data in that format we have to re-sample
+        if (codec_context->sample_fmt != AV_SAMPLE_FMT_S16)
+            throw std::runtime_error("Doesn't handle resampling yet");
+
+        // Populate the KeyFinder::AudioData object with the samples
         int old_sample_count = audio.getSampleCount();
         audio.addToSampleCount(sample_count);
         audio.resetIterators();
