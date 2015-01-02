@@ -53,17 +53,11 @@ struct SafeAVPacket
     }
 };
 
-int main(int argc, char** argv)
+/**
+ * Fill an instance of KeyFinder::AudioData with the audio data from a file.
+ */
+void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
 {
-    if (argc < 2)
-    {
-        std::cerr << "Usage: " << argv[0] << " [filename]" << std::endl;
-        return 1;
-    }
-
-    // File path of the file we want to determine the key of
-    const char* file_path = argv[1];
-
     // Initalize AV format/codec things once
     static std::once_flag init_flag;
     std::call_once(init_flag, []() { av_register_all(); });
@@ -134,9 +128,7 @@ int main(int argc, char** argv)
     if (avresample_open(resample_context_ptr) < 0)
         throw std::runtime_error("Unable to open the resample context");
 
-    // Setup the KeyFinder AudioData object
-    KeyFinder::AudioData audio;
-
+    // Prepare the KeyFinder::AudioData object
     audio.setFrameRate((unsigned int) codec_context->sample_rate);
     audio.setChannels(codec_context->channels);
 
@@ -220,17 +212,32 @@ int main(int argc, char** argv)
             audio.advanceWriteIterator();
         }
     }
+}
 
-    // Setup keyfinder to process the AudioData
+int main(int argc, char** argv)
+{
+    if (argc < 2)
+    {
+        std::cerr << "Usage: " << argv[0] << " [filename]" << std::endl;
+        return 1;
+    }
+
+    // File path of the file we want to determine the key of
+    const char* file_path = argv[1];
+
+    KeyFinder::AudioData audio_data;
+
+    fill_audio_data(file_path, audio_data);
+
     KeyFinder::KeyFinder key_finder;
 
-    KeyFinder::key_t result = key_finder.keyOfAudio(audio).globalKeyEstimate;
+    KeyFinder::key_t key = key_finder.keyOfAudio(audio_data).globalKeyEstimate;
 
     // Only return a key when we don't have silence
     // Rule 12: Be quiet!
-    if (result != KeyFinder::SILENCE)
+    if (key != KeyFinder::SILENCE)
     {
-        std::cout << KeyNotation::camelot[result] << std::endl;
+        std::cout << KeyNotation::camelot[key] << std::endl;
     }
 
     return 0;
