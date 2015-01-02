@@ -53,7 +53,7 @@ int main(int argc, char** argv)
     }
 
     // File path of the file we want to determine the key of
-    char* file_path = argv[1];
+    const char* file_path = argv[1];
 
     // Initalize AV format/codec things once
     static std::once_flag init_flag;
@@ -70,8 +70,7 @@ int main(int argc, char** argv)
     if (avformat_find_stream_info(format_ptr, nullptr) < 0)
         throw std::runtime_error("Unable to get stream info.");
 
-    // Get the audio stream from the context
-    AVStream* audio_stream = nullptr;
+    const AVStream* audio_stream = nullptr;
 
     // Get the audio stream from the context. We have to look through all of
     // the streams, we pick the first one that is recognized as an audio stream
