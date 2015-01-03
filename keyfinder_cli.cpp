@@ -1,5 +1,6 @@
 #include <iostream>
 #include <mutex>
+#include <getopt.h>
 #include <keyfinder/keyfinder.h>
 #include <keyfinder/constants.h>
 
@@ -245,14 +246,59 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
 
 int main(int argc, char** argv)
 {
-    if (argc < 2)
+    auto display_usage = [argv](std::ostream &stream)
     {
-        std::cerr << "Usage: " << argv[0] << " [filename]" << std::endl;
-        return 1;
-    }
+        stream << "Usage: " << argv[0] << " [-h] [-n key-notation] filename"
+               << std::endl;
+    };
 
     // Default to the standard key notation
     auto selected_notation = KeyNotation::standard;
+
+    struct option options[] =
+    {
+        {"notation", required_argument, 0, 'n'},
+        {"help",     no_argument,       0, 'h'},
+        {0, 0, 0, 0}
+    };
+
+    opterr = 0;
+
+    char c;
+    while ((c = getopt_long(argc, argv, "n:h", options, nullptr)) != -1)
+    {
+        switch (c)
+        {
+        case 'h':
+            display_usage(std::cout);
+            return 0;
+
+        case '?':
+            display_usage(std::cerr);
+            return 0;
+
+        case 'n':
+            if (KeyNotation::mappings.find(optarg) == KeyNotation::mappings.end())
+            {
+                std::cerr << "Invalid key notation" << std::endl;
+                return 1;
+            }
+
+            selected_notation = KeyNotation::mappings[optarg];
+            break;
+        }
+    }
+
+    // There should be at least one argument left for the filename. We can
+    // check for this by seeing if the opt parser's last index is larger than
+    // the arg count.
+    if (optind >= argc)
+    {
+        display_usage(std::cerr);
+        return 1;
+    }
+
+    char* file_path = argv[optind];
 
     KeyFinder::KeyFinder key_finder;
     KeyFinder::AudioData audio_data;
@@ -263,7 +309,7 @@ int main(int argc, char** argv)
 
     try
     {
-        fill_audio_data(argv[1], audio_data);
+        fill_audio_data(file_path, audio_data);
         key = key_finder.keyOfAudio(audio_data).globalKeyEstimate;
     }
     catch (std::exception &e)

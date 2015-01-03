@@ -6,10 +6,12 @@
 
 namespace KeyNotation
 {
+    typedef std::map<KeyFinder::key_t, std::string> key_map;
+
     /**
      * Standard Key Notation
      */
-    std::map<KeyFinder::key_t, std::string> standard =
+    key_map standard =
     {
         {KeyFinder::A_MAJOR,       "A" }, {KeyFinder::A_MINOR,       "Am" },
         {KeyFinder::B_FLAT_MAJOR,  "B" }, {KeyFinder::B_FLAT_MINOR,  "Bbm"},
@@ -28,7 +30,7 @@ namespace KeyNotation
     /**
      * Camelot Key Notation [http://mixedinkey.com/HowTo]
      */
-    std::map<KeyFinder::key_t, std::string> camelot =
+    key_map camelot =
     {
         {KeyFinder::A_MAJOR,       "11B"}, {KeyFinder::A_MINOR,       "8A" },
         {KeyFinder::B_FLAT_MAJOR,  "6B" }, {KeyFinder::B_FLAT_MINOR,  "3A" },
@@ -47,7 +49,7 @@ namespace KeyNotation
     /**
      * Open Key Notation [https://beatunes.com/en/open-key-notation.html]
      */
-    std::map<KeyFinder::key_t, std::string> open_key =
+    key_map open_key =
     {
         {KeyFinder::A_MAJOR,       "4d" }, {KeyFinder::A_MINOR,       "1m" },
         {KeyFinder::B_FLAT_MAJOR,  "11d"}, {KeyFinder::B_FLAT_MINOR,  "8m" },
@@ -61,6 +63,13 @@ namespace KeyNotation
         {KeyFinder::G_FLAT_MAJOR,  "7d" }, {KeyFinder::G_FLAT_MINOR,  "4m" },
         {KeyFinder::G_MAJOR,       "2d" }, {KeyFinder::G_MINOR,       "11m"},
         {KeyFinder::A_FLAT_MAJOR,  "9d" }, {KeyFinder::A_FLAT_MINOR,  "6m" },
+    };
+
+    std::map<std::string, key_map> mappings =
+    {
+        {"standard", standard},
+        {"camelot",  camelot },
+        {"openkey",  open_key},
     };
 }
 
