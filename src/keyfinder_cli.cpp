@@ -250,6 +250,9 @@ int main(int argc, char** argv)
     KeyFinder::KeyFinder key_finder;
     KeyFinder::AudioData audio_data;
 
+    // Hide av* warnings and errors
+    av_log_set_callback([](void *, int, const char*, va_list) {});
+
     fill_audio_data(argv[1], audio_data);
 
     KeyFinder::key_t key = key_finder.keyOfAudio(audio_data).globalKeyEstimate;
