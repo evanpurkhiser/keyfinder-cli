@@ -1,7 +1,7 @@
 ## Keyfinder Command Line Interface
 
 This small utility is the automation-oriented DJs best friend. By making use of
-Ibrahim Sha'ath's high quality
+[Ibrahim Sha'ath](http://www.ibrahimshaath.co.uk/)'s high quality
 [libKeyFinder](https://github.com/ibsh/libKeyFinder/) library, this utility can
 be used to estimate the musical key of many different audio file formats.
 
