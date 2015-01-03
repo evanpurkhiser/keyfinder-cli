@@ -12,13 +12,20 @@ By default the program will output the estimated key to STDOUT using the
 Standard Key Notation. When the audio file has no key (silence) nothing will be
 written to STDOUT and the program will exit with a 0 status.
 .SH OPTIONS
-.IP "\fB\-o\fR, \fB--openkey\fR"
+.IP "\fB\-n\fR, \fB--notation\fR \fInotation\fR"
+Set the notation to output the estimated key as. Currently this supports the
+following notation values:
+.RS
+.IP "\fBstandard\fR \fI(default)\fR"
+Use the Standard Key notation.
+.IP \fBopenkey\fR
 Use the Open Key notation. For more details on this notation see the beaTunes
 documentation on the Open Key notation:
 https://www.beatunes.com/en/open-key-notation.html.
-.IP "\fB\-c\fR, \fB--camelot\fR"
+.IP \fBcamelot\fR
 Use the Camelot Key notation. For more details on this notation see the Camelot
 Mixing Guide: http://www.mixedinkey.com/HowTo.
+.RE
 .SH BUGS
 Bugs may be reported on the GitHub project page:
 
