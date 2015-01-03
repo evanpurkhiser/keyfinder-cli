@@ -11,14 +11,14 @@ Installing this software exposes the `keyfinder-cli` command on your system.
 
 The most basic usage of this utility is to provide a path to an audio file, it
 will quickly compute the estimated global music key of the audio file and print
-it to STDOUT.
+it to stdout.
 
 ```sh
 $ keyfinder-cli AMajor.mp3
 A
 ```
 
-In the case that there is no key (silence) nothing will be printed to STDOUT
+In the case that there is no key (silence) nothing will be printed to stdout
 and the program will exit with a 0 status code.
 
 ### Different key notations
