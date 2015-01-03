@@ -251,20 +251,31 @@ int main(int argc, char** argv)
         return 1;
     }
 
+    // Default to the standard key notation
+    auto selected_notation = KeyNotation::standard;
+
     KeyFinder::KeyFinder key_finder;
     KeyFinder::AudioData audio_data;
+    KeyFinder::key_t key;
 
     // Hide av* warnings and errors
     av_log_set_callback([](void *, int, const char*, va_list) {});
 
-    fill_audio_data(argv[1], audio_data);
-
-    KeyFinder::key_t key = key_finder.keyOfAudio(audio_data).globalKeyEstimate;
+    try
+    {
+        fill_audio_data(argv[1], audio_data);
+        key = key_finder.keyOfAudio(audio_data).globalKeyEstimate;
+    }
+    catch (std::exception &e)
+    {
+        std::cerr << e.what() << std::endl;
+        return 1;
+    }
 
     // Only return a key when we don't have silence - rule 12: Be quiet!
     if (key != KeyFinder::SILENCE)
     {
-        std::cout << KeyNotation::camelot[key] << std::endl;
+        std::cout << selected_notation[key] << std::endl;
     }
 
     return 0;
