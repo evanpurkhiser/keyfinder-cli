@@ -1,10 +1,10 @@
-.TH keyfinder-cli 1  "January 1, 2015" "keyfinder-cli" "User Commands"
+.TH keyfinder\-cli 1  "January 1, 2015" "keyfinder\-cli" "User Commands"
 .SH NAME
-keyfinder-cli \- Estimate the musical key of an audio file
+keyfinder\-cli \- Estimate the musical key of an audio file
 .SH SYNOPSIS
-\fBkeyfinder-cli\fR [-n key-notation] audio-file
+\fBkeyfinder-cli\fR [\-n key\-notation] \fIaudio\-file\f
 .SH DESCRIPTION
-The \fBkeyfinder-cli\fR command is used to estimate the musical key of an audio
+The \fBkeyfinder\-cli\fR command is used to estimate the musical key of an audio
 file. Different output key notations are supported. This tool is intended to be
 used by DJs wishing to automate their music organization process.
 
@@ -12,7 +12,7 @@ By default the program will output the estimated key to STDOUT using the
 Standard Key Notation. When the audio file has no key (silence) nothing will be
 written to STDOUT and the program will exit with a 0 status.
 .SH OPTIONS
-.IP "\fB\-n\fR, \fB--notation\fR \fInotation\fR"
+.IP "\fB\-n\fR, \fB\-\-notation\fR \fInotation\fR"
 Set the notation to output the estimated key as. Currently this supports the
 following notation values:
 .RS
@@ -26,11 +26,11 @@ https://www.beatunes.com/en/open-key-notation.html.
 Use the Camelot Key notation. For more details on this notation see the Camelot
 Mixing Guide: http://www.mixedinkey.com/HowTo.
 .RE
-.IP "\fB\-h\fR, \fB--help\fR"
+.IP "\fB\-h\fR, \fB\-\-help\fR"
 Show the program usage message.
 .SH BUGS
 Bugs may be reported on the GitHub project page:
 
-https://github.com/EvanPurkhiser/keyfinder-cli
+https://github.com/EvanPurkhiser/keyfinder\-cli
 .SH AUTHOR
 Evan M. Purkhiser (evanpurkhiser@gmail.com)
