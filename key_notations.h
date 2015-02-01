@@ -21,7 +21,7 @@ namespace KeyNotation
         {KeyFinder::D_MAJOR,       "D" }, {KeyFinder::D_MINOR,       "Dm" },
         {KeyFinder::E_FLAT_MAJOR,  "Eb"}, {KeyFinder::E_FLAT_MINOR,  "Ebm"},
         {KeyFinder::E_MAJOR,       "E" }, {KeyFinder::E_MINOR,       "Em" },
-        {KeyFinder::F_MAJOR,       "F" }, {KeyFinder::F_MINOR,       "Em" },
+        {KeyFinder::F_MAJOR,       "F" }, {KeyFinder::F_MINOR,       "Fm" },
         {KeyFinder::G_FLAT_MAJOR,  "Gb"}, {KeyFinder::G_FLAT_MINOR,  "Gbm"},
         {KeyFinder::G_MAJOR,       "G" }, {KeyFinder::G_MINOR,       "Gm" },
         {KeyFinder::A_FLAT_MAJOR,  "Ab"}, {KeyFinder::A_FLAT_MINOR,  "Abm"},
