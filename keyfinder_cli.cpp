@@ -1,5 +1,6 @@
 #include <iostream>
 #include <mutex>
+#include <memory>
 #include <getopt.h>
 #include <keyfinder/keyfinder.h>
 #include <keyfinder/constants.h>
@@ -310,7 +311,7 @@ int main(int argc, char** argv)
     try
     {
         fill_audio_data(file_path, audio_data);
-        key = key_finder.keyOfAudio(audio_data).globalKeyEstimate;
+        key = key_finder.keyOfAudio(audio_data);
     }
     catch (std::exception &e)
     {
