@@ -44,4 +44,16 @@ Three different key notations are supported and can be toggled:
     Keys are outputed using the Camelot Easymix Wheel notation.  Similar to
     Open Key notation `8B` is equivelant to C Major.
 
+### Building
 
+You will need to have the following dependencies installed on your machine
+
+ * [ffmpeg](https://www.ffmpeg.org/) (This was not tested with `libav`)
+ * [libkeyfinder](https://github.com/ibsh/libKeyFinder/)
+
+As long as these two dependencies are installed then you should be able to
+simply type:
+
+```
+$ make
+```
