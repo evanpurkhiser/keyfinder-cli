@@ -1,0 +1,34 @@
+language: cpp
+sudo: false
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-4.9
+      - libfftw3-dev
+
+before_install:
+    # Build libkeyfinder
+    - git clone https://github.com/ibsh/libKeyFinder.git keyfinder
+    - cd keyfinder
+    - curl -L https://github.com/ibsh/libKeyFinder/pull/9.patch | git apply
+    - qmake
+    - make CXX=g++-4.9
+    - cd ..
+
+    # Build ffmpeg (the real ffmpeg, not libav)
+    - wget http://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2
+    - tar xjf ffmpeg-snapshot.tar.bz2
+    - cd ffmpeg
+    - ./configure --shlibdir=.  --disable-everything --enable-shared --enable-avresample --disable-yasm --disable-programs --disable-doc
+    - make
+    - mv libav{codec,format,util,resample}/*.so* .
+    - cd ..
+
+    # Set include path for libkeyfinder and ffmpeg
+    - export CPLUS_INCLUDE_PATH=ffmpeg:.
+    - export LIBRARY_PATH=ffmpeg:keyfinder
+
+script: make CXX=g++-4.9
