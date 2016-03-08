@@ -39,7 +39,7 @@ struct SafeAVPacket
     {
         if (inner_packet.data)
         {
-            av_free_packet(&inner_packet);
+            av_packet_unref(&inner_packet);
         }
     }
 
@@ -56,7 +56,7 @@ struct SafeAVPacket
         {
             if (inner_packet.data)
             {
-                av_free_packet(&inner_packet);
+                av_packet_unref(&inner_packet);
             }
 
             if (av_read_frame(format_context, &inner_packet) < 0)
