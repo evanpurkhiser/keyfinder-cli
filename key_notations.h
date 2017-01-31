@@ -14,7 +14,7 @@ namespace KeyNotation
     key_map standard =
     {
         {KeyFinder::A_MAJOR,       "A" }, {KeyFinder::A_MINOR,       "Am" },
-        {KeyFinder::B_FLAT_MAJOR,  "B" }, {KeyFinder::B_FLAT_MINOR,  "Bbm"},
+        {KeyFinder::B_FLAT_MAJOR,  "Bb"}, {KeyFinder::B_FLAT_MINOR,  "Bbm"},
         {KeyFinder::B_MAJOR,       "B" }, {KeyFinder::B_MINOR,       "Bm" },
         {KeyFinder::C_MAJOR,       "C" }, {KeyFinder::C_MINOR,       "Cm" },
         {KeyFinder::D_FLAT_MAJOR,  "Db"}, {KeyFinder::D_FLAT_MINOR,  "Dbm"},
