@@ -13,7 +13,6 @@ before_install:
     # Build libkeyfinder
     - git clone https://github.com/ibsh/libKeyFinder.git keyfinder
     - cd keyfinder
-    - curl -L https://github.com/ibsh/libKeyFinder/pull/9.patch | git apply
     - qmake
     - make CXX=g++-4.9
     - cd ..
