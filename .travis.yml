@@ -5,15 +5,17 @@ addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
+      - debian-sid
     packages:
       - g++-4.9
       - libfftw3-dev
+      - qt5-default
 
 before_install:
     # Build libkeyfinder
     - git clone https://github.com/ibsh/libKeyFinder.git keyfinder
     - cd keyfinder
-    - qmake
+    - qt5-qmake
     - make CXX=g++-4.9
     - cd ..
 
