@@ -56,4 +56,8 @@ simply type:
 
 ```
 $ make
+$ make install
+
+# Or suffix with PREFIX= to specify the install prefix
+$ PREFIX=$HOME/.local make install
 ```
