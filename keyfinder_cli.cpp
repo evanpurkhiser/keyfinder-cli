@@ -81,9 +81,7 @@ struct SafeAVPacket
  */
 void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
 {
-    // Initialize AV format/codec things once
     static std::once_flag init_flag;
-    std::call_once(init_flag, []() { av_register_all(); });
 
     AVFormatContext* format_ctx_ptr = avformat_alloc_context();
 
@@ -108,7 +106,7 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
     {
         auto stream = format_context->streams[i];
 
-        if (stream->codec->codec_type == AVMEDIA_TYPE_AUDIO)
+        if (stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
         {
             audio_stream = stream;
             break;
@@ -119,7 +117,11 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
         throw std::runtime_error("File does not have any audio streams");
 
     // Get the codec context and codec handler
-    const auto codec_context = audio_stream->codec;
+    AVCodecContext* codec_context = avcodec_alloc_context3(nullptr);
+
+    if (avcodec_parameters_to_context(codec_context, audio_stream->codecpar) < 0)
+        throw std::runtime_error("Failed to get codec context");
+
     const auto codec = avcodec_find_decoder(codec_context->codec_id);
 
     if (codec == nullptr)
