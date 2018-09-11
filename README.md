@@ -27,29 +27,29 @@ and the program will exit with a 0 status code.
 
 Three different key notations are supported and can be toggled:
 
- 1. `-n standard` for **Standard Key Notation**
+1.  `-n standard` for **Standard Key Notation**
 
-    Keys are outputed using the standard notation.  For example, `Eb` is
-    equivelant to E flat. `A` is equivelant to A Major.  Sharps are not used.
+    Keys are outputed using the standard notation. For example, `Eb` is
+    equivelant to E flat. `A` is equivelant to A Major. Sharps are not used.
     This is the default notation mode used to output keys when no other otpions
     are specified
 
- 2. `-n openkey` for [**Open Key Notation**](https://www.beatunes.com/en/open-key-notation.html)
+2.  `-n openkey` for [**Open Key Notation**](https://www.beatunes.com/en/open-key-notation.html)
 
-     Keys are outputed using BeaTunes Open Key notation. Keys like `1m` are
-     equivelant to C Major. This is what Traktor uses for it's key notation.
+    Keys are outputed using BeaTunes Open Key notation. Keys like `1m` are
+    equivelant to C Major. This is what Traktor uses for it's key notation.
 
- 3. `-n camelot` for [**Camelot Key Notation**](http://www.mixedinkey.com/HowTo)
+3.  `-n camelot` for [**Camelot Key Notation**](http://www.mixedinkey.com/HowTo)
 
-    Keys are outputed using the Camelot Easymix Wheel notation.  Similar to
+    Keys are outputed using the Camelot Easymix Wheel notation. Similar to
     Open Key notation `8B` is equivelant to C Major.
 
 ### Building
 
 You will need to have the following dependencies installed on your machine
 
- * [ffmpeg](https://www.ffmpeg.org/) (This was not tested with `libav`)
- * [libkeyfinder](https://github.com/ibsh/libKeyFinder/)
+- [ffmpeg](https://www.ffmpeg.org/) (This was not tested with `libav`)
+- [libkeyfinder](https://github.com/ibsh/libKeyFinder/)
 
 As long as these two dependencies are installed then you should be able to
 simply type:
