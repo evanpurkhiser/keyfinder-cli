@@ -5,7 +5,7 @@ This small utility is the automation-oriented DJs best friend. By making use of
 [libKeyFinder](https://github.com/ibsh/libKeyFinder/) library, this utility can
 be used to estimate the musical key of many different audio file formats.
 
-[![Build Status](https://travis-ci.org/EvanPurkhiser/keyfinder-cli.svg?branch=master)](https://travis-ci.org/EvanPurkhiser/keyfinder-cli)
+[![Build Status](https://www.travis-ci.com/EvanPurkhiser/keyfinder-cli.svg?branch=master)](https://www.travis-ci.com/EvanPurkhiser/keyfinder-cli)
 
 ### Usage and Expected Behavior
 
