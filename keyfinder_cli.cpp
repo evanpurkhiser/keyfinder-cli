@@ -84,6 +84,10 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
     static std::once_flag init_flag;
 
     AVFormatContext* format_ctx_ptr = avformat_alloc_context();
+    
+    // Needed for Ubuntu 18.04's versions of ffmpeg (and probably elsewhere?)
+    av_register_all();
+    avcodec_register_all();
 
     // Open the file for decoding
     if (avformat_open_input(&format_ctx_ptr, file_path, nullptr, nullptr) < 0)
