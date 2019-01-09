@@ -11,7 +11,7 @@ extern "C"
 #include <libavutil/opt.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-#include <libavresample/avresample.h>
+#include <libswresample/swresample.h>
 }
 
 #include "key_notations.h"
@@ -81,8 +81,6 @@ struct SafeAVPacket
  */
 void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
 {
-    static std::once_flag init_flag;
-
     AVFormatContext* format_ctx_ptr = avformat_alloc_context();
 
     // Open the file for decoding
@@ -133,9 +131,9 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
 
     // Setup the audio resample context in situations where we need to resample
     // the audio stream samples into 16bit PCM data
-    std::shared_ptr<AVAudioResampleContext> resample_context(
-            avresample_alloc_context(),
-            [](AVAudioResampleContext* c) { avresample_free(&c); });
+    std::shared_ptr<SwrContext> resample_context(
+            swr_alloc(),
+            [](SwrContext* c) { swr_free(&c); });
     auto resample_ctx_ptr = resample_context.get();
 
     // The channel_layout may need to be populated from the number of channels.
@@ -154,7 +152,7 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
     av_opt_set_int(resample_ctx_ptr, "out_sample_rate",    codec_context->sample_rate,    0);
     av_opt_set_int(resample_ctx_ptr, "out_channel_layout", codec_context->channel_layout, 0);
 
-    if (avresample_open(resample_ctx_ptr) < 0)
+    if (swr_init(resample_ctx_ptr) < 0)
         throw std::runtime_error("Unable to open the resample context");
 
     // Prepare the KeyFinder::AudioData object
@@ -220,7 +218,11 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
             converted_frame->sample_rate = audio_frame->sample_rate;
             converted_frame->format = AV_SAMPLE_FMT_S16;
 
-            if (avresample_convert_frame(resample_ctx_ptr, converted_frame.get(), audio_frame.get()) < 0)
+            converted_frame->nb_samples = audio_frame->nb_samples;
+            if (av_frame_get_buffer(converted_frame.get(), 0) < 0)
+                throw std::runtime_error("Unable to allocate conversion frame");
+
+            if (swr_convert_frame(resample_ctx_ptr, converted_frame.get(), audio_frame.get()) < 0)
                 throw std::runtime_error("Unable to resample audio into 16bit PCM data");
 
             audio_frame.swap(converted_frame);

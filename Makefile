@@ -1,7 +1,7 @@
 PREFIX=/usr/local
 
 keyfinder-cli: keyfinder_cli.cpp key_notations.h
-	$(CXX) $< -std=c++11 -Wall -lkeyfinder -lavcodec -lavformat -lavutil -lavresample -o $@
+	$(CXX) $< -std=c++11 -Wall -lkeyfinder -lavcodec -lavformat -lavutil -lswresample -o $@
 
 install: keyfinder-cli keyfinder-cli.1
 	install -d "${DESTDIR}${PREFIX}/bin"
