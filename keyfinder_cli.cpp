@@ -16,8 +16,6 @@ extern "C"
 
 #include "key_notations.h"
 
-const int BAD_PACKET_THRESHOLD = 100;
-
 /**
  * The "safe" AVPacket wrapper will handle memory management of the packet,
  * ensuring that if an instance of this packet wrapper is destroyed the
@@ -162,51 +160,21 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
     SafeAVPacket packet;
     std::shared_ptr<AVFrame> audio_frame(av_frame_alloc(), &av_free);
 
-    int current_packet_offset = 0;
-    int back_packet_count = 0;
-
     // Read all stream samples into the AudioData container
     while (true)
     {
-        // Read another packet once we've consumed all of the previous one
-        if (current_packet_offset >= packet.inner_packet.size)
-        {
-            packet.read(format_ctx_ptr, audio_stream->index);
+        packet.read(format_ctx_ptr, audio_stream->index);
 
-            current_packet_offset = 0;
+        // We're all done once we have no more packets to read
+        if (packet.inner_packet.size <= 0)
+            break;
 
-            // We're all done once we have no more packets to read
-            if (packet.inner_packet.size <= 0)
-                break;
-        }
+        if (avcodec_send_packet(codec_context, &packet.inner_packet) < 0)
+            throw std::runtime_error("Unable to decode packet");
 
-        int frame_available = 0;
-        const auto processed_size = avcodec_decode_audio4(codec_context,
-                audio_frame.get(), &frame_available, &packet.inner_packet);
+        if (avcodec_receive_frame(codec_context, audio_frame.get()) < 0)
+            throw std::runtime_error("Unable to decode packet");
 
-        // Bad packet. Maybe we can ignore it
-        if (processed_size < 0)
-        {
-            if (++back_packet_count > BAD_PACKET_THRESHOLD)
-                throw std::runtime_error("Too many bad packets");
-
-            current_packet_offset    = 0;
-            packet.inner_packet.size = 0;
-
-            continue;
-        }
-
-        current_packet_offset += processed_size;
-
-        // Seek The packet forward for the ammount of data we've read. If there
-        // is still data left in the packet that wasn't decoded we will handle
-        // that next interation of this loop
-        packet.inner_packet.size -= current_packet_offset;
-        packet.inner_packet.data += current_packet_offset;
-
-        // Not enough data to read the frame. Keep going
-        if ( ! frame_available)
-            continue;
 
         // The KeyFinder::AudioData object expects non-planar 16 bit PCM data.
         // If we didn't decode audio data in that format we have to re-sample
