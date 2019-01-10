@@ -15,9 +15,10 @@ before_install:
 - wget http://ffmpeg.org/releases/ffmpeg-4.0.2.tar.bz2
 - tar xjf ffmpeg-4.0.2.tar.bz2
 - cd ffmpeg-4.0.2
-- ./configure --shlibdir=.  --disable-everything --enable-shared --enable-avresample --disable-yasm --disable-programs --disable-doc
+- ./configure --shlibdir=. --disable-everything --enable-shared --disable-yasm --disable-programs --disable-doc
 - make
-- mv libav{codec,format,util,resample}/*.so* .
+- mv libav{codec,format,util}/*.so* .
+- mv libswresample/*.so* .
 - cd ..
 
 # Build libkeyfinder
