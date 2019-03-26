@@ -176,15 +176,11 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
             throw std::runtime_error("Unable to decode packet");
 
         while (true) {
-            int result = avcodec_receive_frame(codec_context, audio_frame.get());
-
-            if (result == AVERROR(EAGAIN)) {
+            const auto result = avcodec_receive_frame(codec_context, audio_frame.get());
+            if (result == AVERROR(EAGAIN))
                 break;
-            }
-            else if (result < 0) {
+            if (result < 0)
                 throw std::runtime_error("Unable to decode packet");
-            }
-
 
             // The KeyFinder::AudioData object expects non-planar 16 bit PCM data.
             // If we didn't decode audio data in that format we have to re-sample
