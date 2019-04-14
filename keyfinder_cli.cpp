@@ -81,8 +81,13 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
 {
     AVFormatContext* format_ctx_ptr = avformat_alloc_context();
 
+#if LIBAVFORMAT_VERSION_MAJOR < 58
     av_register_all();
+#endif
+
+# if LIBAVCODEC_VERSION_MAJOR < 58
     avcodec_register_all();
+#endif
 
     // Open the file for decoding
     if (avformat_open_input(&format_ctx_ptr, file_path, nullptr, nullptr) < 0)
