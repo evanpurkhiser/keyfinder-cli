@@ -3,33 +3,33 @@ sudo: required
 dist: trusty
 
 before_install:
-# For gcc-6
-- sudo apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 1397BC53640DB551
-- sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
-- sudo apt-get update
+  # For gcc-6
+  - sudo apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 1397BC53640DB551
+  - sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
+  - sudo apt-get update
 
-- sudo apt-get install --yes libgles2-mesa-dev  # Needed for qt5. Msust be installed first
-- sudo apt-get install --yes g++-6 libfftw3-dev qt5-default qtbase5-dev
+  - sudo apt-get install --yes libgles2-mesa-dev  # Needed for qt5. Msust be installed first
+  - sudo apt-get install --yes g++-6 libfftw3-dev qt5-default qtbase5-dev
 
-# Build ffmpeg
-- wget http://ffmpeg.org/releases/ffmpeg-4.0.2.tar.bz2
-- tar xjf ffmpeg-4.0.2.tar.bz2
-- cd ffmpeg-4.0.2
-- ./configure --shlibdir=. --disable-everything --enable-shared --disable-yasm --disable-programs --disable-doc
-- make
-- mv libav{codec,format,util}/*.so* .
-- mv libswresample/*.so* .
-- cd ..
+  # Build ffmpeg
+  - wget http://ffmpeg.org/releases/ffmpeg-4.0.2.tar.bz2
+  - tar xjf ffmpeg-4.0.2.tar.bz2
+  - cd ffmpeg-4.0.2
+  - ./configure --shlibdir=. --disable-everything --enable-shared --disable-yasm --disable-programs --disable-doc
+  - make
+  - mv libav{codec,format,util}/*.so* .
+  - mv libswresample/*.so* .
+  - cd ..
 
-# Build libkeyfinder
-- git clone https://github.com/ibsh/libKeyFinder.git keyfinder
-- cd keyfinder
-- qmake
-- make CXX=g++-6
-- cd ..
+  # Build libkeyfinder
+  - git clone https://github.com/ibsh/libKeyFinder.git keyfinder
+  - cd keyfinder
+  - qmake
+  - make CXX=g++-6
+  - cd ..
 
-# Set include path for libkeyfinder and ffmpeg
-- export CPLUS_INCLUDE_PATH=ffmpeg-4.0.2:.
-- export LIBRARY_PATH=ffmpeg-4.0.2:keyfinder
+  # Set include path for libkeyfinder and ffmpeg
+  - export CPLUS_INCLUDE_PATH=ffmpeg-4.0.2:.
+  - export LIBRARY_PATH=ffmpeg-4.0.2:keyfinder
 
 script: make CXX=g++-6
