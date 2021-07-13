@@ -49,7 +49,7 @@ Three different key notations are supported and can be toggled:
 You will need to have the following dependencies installed on your machine
 
 - [ffmpeg](https://www.ffmpeg.org/) (This was not tested with `libav`)
-- [libkeyfinder](https://github.com/ibsh/libKeyFinder/)
+- [libkeyfinder](https://github.com/mixxxdj/libkeyfinder/)
 
 As long as these two dependencies are installed then you should be able to
 simply type:
