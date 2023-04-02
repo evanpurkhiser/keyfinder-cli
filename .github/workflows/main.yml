@@ -17,15 +17,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes \
             libswresample-dev libavformat-dev libavutil-dev libavcodec-dev \
-            qt5-default qtbase5-dev \
-            libfftw3-dev
+            cmake catch2 libfftw3-dev
 
       - name: Build libkeyfinder
         run: |
-          git clone https://github.com/ibsh/libKeyFinder.git keyfinder
+          git clone https://github.com/mixxxdj/libkeyfinder keyfinder
           cd keyfinder
-          qmake
-          sudo make install
+          cmake -S . -B build
+          cmake --build build
+          sudo cmake --install build
 
-      - name: Build keyfiner-cli
+      - name: Build keyfinder-cli
         run: make
