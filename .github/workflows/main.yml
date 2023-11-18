@@ -16,8 +16,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes \
-            libswresample-dev libavformat-dev libavutil-dev libavcodec-dev \
-            cmake catch2 libfftw3-dev
+            libswresample-dev libavformat-dev libavutil-dev libavcodec-dev fftw3-dev
 
       - name: Build libkeyfinder
         run: |
