@@ -1,0 +1,17 @@
+name: cron-keep-alive
+on:
+  schedule:
+    - cron: "0 0 * * 1"
+
+jobs:
+  cron-keep-alive:
+    name: cron-keep-alive
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: git checkout -b cron-keep-alive
+      - uses: gautamkrishnar/keepalive-workflow@v1
+        with:
+          commit_message: "Cron keep alive commit"
+          committer_username: "github-actions[bot]"
+          committer_email: "github-actions[bot]@users.noreply.github.com"
