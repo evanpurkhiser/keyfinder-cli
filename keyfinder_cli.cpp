@@ -75,6 +75,14 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
 {
     AVFormatContext* format_ctx_ptr = avformat_alloc_context();
 
+#if LIBAVFORMAT_VERSION_MAJOR < 58
+    av_register_all();
+#endif
+
+# if LIBAVCODEC_VERSION_MAJOR < 58
+    avcodec_register_all();
+#endif
+
     // Open the file for decoding
     if (avformat_open_input(&format_ctx_ptr, file_path, nullptr, nullptr) < 0)
         throw std::runtime_error("Unable to open audio file (File doesn't exist or unhandle format)");
@@ -128,21 +136,45 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
             [](SwrContext* c) { swr_free(&c); });
     auto resample_ctx_ptr = resample_context.get();
 
-    av_opt_set_int(resample_ctx_ptr, "in_sample_rate",  codec_context->sample_rate, 0);
-    av_opt_set_int(resample_ctx_ptr, "out_sample_rate", codec_context->sample_rate, 0);
-
+// ffmpeg 7.0
+#if LIBAVFORMAT_VERSION_MAJOR > 60
+    av_opt_set_int(resample_ctx_ptr, "in_sample_rate",        codec_context->sample_rate, 0);
     av_opt_set_sample_fmt(resample_ctx_ptr, "in_sample_fmt",  codec_context->sample_fmt,  0);
-    av_opt_set_sample_fmt(resample_ctx_ptr, "out_sample_fmt", AV_SAMPLE_FMT_S16,          0);
+    av_opt_set_chlayout(resample_ctx_ptr, "in_chlayout",      &codec_context->ch_layout,  0);
 
-    av_opt_set_chlayout(resample_ctx_ptr, "in_chlayout",  &codec_context->ch_layout, 0);
-    av_opt_set_chlayout(resample_ctx_ptr, "out_chlayout", &codec_context->ch_layout, 0);
+    av_opt_set_int(resample_ctx_ptr, "out_sample_rate",       codec_context->sample_rate, 0);
+    av_opt_set_sample_fmt(resample_ctx_ptr, "out_sample_fmt", AV_SAMPLE_FMT_S16,          0);
+    av_opt_set_chlayout(resample_ctx_ptr, "out_chlayout",     &codec_context->ch_layout,  0);
+#else
+    // The channel_layout may need to be populated from the number of channels.
+    // This is usually the case with formats using the pcm_16* codecs where
+    // it's not nessicarily possible to determine the channel layout. In these
+    // situations we can use the default channel_layout
+    if ( ! codec_context->channel_layout)
+    {
+        codec_context->channel_layout = av_get_default_channel_layout(codec_context->channels);
+    }
+
+    av_opt_set_int(resample_ctx_ptr, "in_sample_fmt",      codec_context->sample_fmt,     0);
+    av_opt_set_int(resample_ctx_ptr, "in_sample_rate",     codec_context->sample_rate,    0);
+    av_opt_set_int(resample_ctx_ptr, "in_channel_layout",  codec_context->channel_layout, 0);
+
+    av_opt_set_int(resample_ctx_ptr, "out_sample_fmt",     AV_SAMPLE_FMT_S16,             0);
+    av_opt_set_int(resample_ctx_ptr, "out_sample_rate",    codec_context->sample_rate,    0);
+    av_opt_set_int(resample_ctx_ptr, "out_channel_layout", codec_context->channel_layout, 0);
+#endif
 
     if (swr_init(resample_ctx_ptr) < 0)
         throw std::runtime_error("Unable to open the resample context");
 
     // Prepare the KeyFinder::AudioData object
     audio.setFrameRate((unsigned int) codec_context->sample_rate);
+
+#if LIBAVFORMAT_VERSION_MAJOR > 60
     audio.setChannels(codec_context->ch_layout.nb_channels);
+#else
+    audio.setChannels(codec_context->channel_layout);
+#endif
 
     SafeAVPacket packet;
     std::shared_ptr<AVFrame> audio_frame(av_frame_alloc(), &av_free);
@@ -172,7 +204,12 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
             {
                 std::shared_ptr<AVFrame> converted_frame(av_frame_alloc(), &av_free);
 
+#if LIBAVFORMAT_VERSION_MAJOR > 60
                 converted_frame->ch_layout = audio_frame->ch_layout;
+#else
+                converted_frame->channel_layout = audio_frame->channel_layout;
+#endif
+
                 converted_frame->sample_rate = audio_frame->sample_rate;
                 converted_frame->format = AV_SAMPLE_FMT_S16;
 
