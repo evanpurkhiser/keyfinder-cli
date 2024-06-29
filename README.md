@@ -2,8 +2,9 @@
 
 This small utility is the automation-oriented DJs best friend. By making use of
 [Ibrahim Sha'ath](http://www.ibrahimshaath.co.uk/)'s high quality
-[libKeyFinder](https://github.com/ibsh/libKeyFinder/) library, this utility can
-be used to estimate the musical key of many different audio file formats.
+[libKeyFinder](https://github.com/mixxxdj/libkeyfinder) library (now maintained
+by [Mixxx DJ](https://github.com/mixxxdj)), this utility can be used to
+estimate the musical key of many different audio file formats.
 
 [![Build Status](https://github.com/evanpurkhiser/keyfinder-cli/workflows/build/badge.svg)](https://github.com/evanpurkhiser/keyfinder-cli/actions?query=workflow%3Abuild)
 
