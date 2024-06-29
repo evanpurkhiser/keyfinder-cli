@@ -23,22 +23,16 @@ extern "C"
  */
 struct SafeAVPacket
 {
-    AVPacket inner_packet;
+    AVPacket* inner_packet;
 
     SafeAVPacket()
     {
-        av_init_packet(&inner_packet);
-
-        inner_packet.data = nullptr;
-        inner_packet.size = 0;
+        inner_packet = av_packet_alloc();
     }
 
     ~SafeAVPacket()
     {
-        if (inner_packet.data)
-        {
-            av_packet_unref(&inner_packet);
-        }
+        av_packet_free(&inner_packet);
     }
 
     /**
@@ -52,18 +46,18 @@ struct SafeAVPacket
     {
         while (true)
         {
-            if (inner_packet.data)
+            if (inner_packet->data)
             {
-                av_packet_unref(&inner_packet);
+                av_packet_unref(inner_packet);
             }
 
-            if (av_read_frame(format_context, &inner_packet) < 0)
+            if (av_read_frame(format_context, inner_packet) < 0)
             {
-                inner_packet.data = nullptr;
+                inner_packet->data = nullptr;
             }
 
             // Stop reading once we've read a packet from this stream
-            if (inner_packet.stream_index == stream_index)
+            if (inner_packet->stream_index == stream_index)
                 break;
         }
     }
@@ -174,10 +168,10 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
         packet.read(format_ctx_ptr, audio_stream->index);
 
         // We're all done once we have no more packets to read
-        if (packet.inner_packet.size <= 0)
+        if (packet.inner_packet->size <= 0)
             break;
 
-        if (avcodec_send_packet(codec_context, &packet.inner_packet) < 0)
+        if (avcodec_send_packet(codec_context, packet.inner_packet) < -1)
             throw std::runtime_error("Unable to decode packet");
 
         while (true) {
