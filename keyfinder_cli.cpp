@@ -87,7 +87,7 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
     if (avformat_open_input(&format_ctx_ptr, file_path, nullptr, nullptr) < 0)
         throw std::runtime_error("Unable to open audio file (File doesn't exist or unhandle format)");
 
-    // Manage the format context. Instead of initalizing this before opening
+    // Manage the format context. Instead of initializing this before opening
     // the input we handle it after since avformat_open_input will free the
     // context for us upon error.
     std::shared_ptr<AVFormatContext> format_context(format_ctx_ptr, &avformat_free_context);
