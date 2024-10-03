@@ -265,7 +265,7 @@ int main(int argc, char** argv)
 
     opterr = 0;
 
-    char c;
+    int c;
     while ((c = getopt_long(argc, argv, "n:h", options, nullptr)) != -1)
     {
         switch (c)
