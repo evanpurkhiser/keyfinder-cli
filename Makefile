@@ -1,13 +1,17 @@
-PREFIX=/usr/local
+PREFIX = /usr/local
+MANDIR = ${PREFIX}/share/man
+CXXFLAGS != pkg-config --cflags --libs fftw3 libavcodec libavformat libavutil libswresample libkeyfinder
+
+all: keyfinder-cli
 
 keyfinder-cli: keyfinder_cli.cpp key_notations.h
-	$(CXX) $< -std=c++11 -Wall -lkeyfinder -lavcodec -lavformat -lavutil -lswresample -lfftw3 -o $@
+	${CXX} -std=c++11 -Wall ${CXXFLAGS} -o $@ keyfinder_cli.cpp
 
 install: keyfinder-cli keyfinder-cli.1
 	install -d "${DESTDIR}${PREFIX}/bin"
 	install -m 755 keyfinder-cli "${DESTDIR}${PREFIX}/bin/keyfinder-cli"
-	install -d "${DESTDIR}${PREFIX}/share/man/man1"
-	install -m 644 keyfinder-cli.1 "${DESTDIR}${PREFIX}/share/man/man1/keyfinder-cli.1"
+	install -d "${DESTDIR}${MANDIR}/man1"
+	install -m 644 keyfinder-cli.1 "${DESTDIR}${MANDIR}/man1/keyfinder-cli.1"
 
 clean:
-	rm keyfinder-cli
+	rm -f keyfinder-cli
