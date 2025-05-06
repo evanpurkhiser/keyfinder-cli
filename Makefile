@@ -5,7 +5,7 @@ CXXFLAGS != pkg-config --cflags --libs fftw3 libavcodec libavformat libavutil li
 all: keyfinder-cli
 
 keyfinder-cli: keyfinder_cli.cpp key_notations.h
-	${CXX} -std=c++11 -Wall ${CXXFLAGS} -o $@ keyfinder_cli.cpp
+	${CXX} keyfinder_cli.cpp -std=c++11 -Wall ${CXXFLAGS} -o $@
 
 install: keyfinder-cli keyfinder-cli.1
 	install -d "${DESTDIR}${PREFIX}/bin"
