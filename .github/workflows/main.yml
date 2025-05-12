@@ -4,19 +4,17 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: build
+  ubuntu:
+    name: Ubuntu
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
-
+      - name: Check out Git repository
+        uses: actions/checkout@v4
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install --yes \
             libswresample-dev libavformat-dev libavutil-dev libavcodec-dev libfftw3-dev
-
       - name: Build libkeyfinder
         run: |
           git clone https://github.com/mixxxdj/libkeyfinder keyfinder
@@ -24,6 +22,15 @@ jobs:
           cmake -S . -B build
           cmake --build build
           sudo cmake --install build
-
       - name: Build keyfinder-cli
         run: make
+  macos:
+    name: macOS
+    runs-on: macos-latest
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        run: brew install ffmpeg libkeyfinder make
+      - name: Build keyfinder-cli
+        run: gmake
