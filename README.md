@@ -56,9 +56,7 @@ As long as these two dependencies are installed then you should be able to
 simply type:
 
 ```
-$ make
-$ make install
-
-# Or suffix with PREFIX= to specify the install prefix
-$ PREFIX=$HOME/.local make install
+$ cmake -DCMAKE_INSTALL_PREFIX=/where/you/want/to/install/to -S . -B build
+$ cmake --build build
+$ cmake --install build
 ```
