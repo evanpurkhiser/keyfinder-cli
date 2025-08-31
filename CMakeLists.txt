@@ -28,4 +28,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE KeyFinder::keyfinder)
 # Installation
 include(GNUInstallDirs)
 install(TARGETS ${PROJECT_NAME})
-install(FILES ${PROJECT_NAME}.1 TYPE MAN)
+if(UNIX)
+    install(FILES ${PROJECT_NAME}.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+endif()
