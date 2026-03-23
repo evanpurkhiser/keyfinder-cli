@@ -173,7 +173,7 @@ void fill_audio_data(const char* file_path, KeyFinder::AudioData &audio)
 #if LIBAVFORMAT_VERSION_MAJOR > 60
     audio.setChannels(codec_context->ch_layout.nb_channels);
 #else
-    audio.setChannels(codec_context->channel_layout);
+    audio.setChannels(codec_context->channels);
 #endif
 
     SafeAVPacket packet;
