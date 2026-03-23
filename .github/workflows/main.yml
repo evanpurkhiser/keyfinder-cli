@@ -26,6 +26,27 @@ jobs:
           cmake -S . -B build
           cmake --build build
           sudo cmake --install build
+      - name: Test key detection
+        run: |
+          KEY=$(keyfinder-cli test-c-major.wav)
+          echo "Detected key: $KEY"
+          if [ "$KEY" != "C" ]; then
+            echo "ERROR: Expected key 'C' but got '$KEY'"
+            exit 1
+          fi
+          KEY_CAMELOT=$(keyfinder-cli -n camelot test-c-major.wav)
+          echo "Detected key (Camelot): $KEY_CAMELOT"
+          if [ "$KEY_CAMELOT" != "8B" ]; then
+            echo "ERROR: Expected key '8B' but got '$KEY_CAMELOT'"
+            exit 1
+          fi
+          KEY_OPENKEY=$(keyfinder-cli -n openkey test-c-major.wav)
+          echo "Detected key (OpenKey): $KEY_OPENKEY"
+          if [ "$KEY_OPENKEY" != "1d" ]; then
+            echo "ERROR: Expected key '1d' but got '$KEY_OPENKEY'"
+            exit 1
+          fi
+          echo "All key detection tests passed!"
   macos:
     name: macOS
     runs-on: macos-latest
