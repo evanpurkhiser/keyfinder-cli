@@ -1,0 +1,88 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux-amd64:
+    name: Build ${{ matrix.label }} amd64 tarball
+    runs-on: ubuntu-latest
+    container: ${{ matrix.container }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Ubuntu 24.04 LTS ships FFmpeg 6 (libavformat.so.60). Works on
+          # Ubuntu 24.04 + downstreams; Debian bookworm also ships FFmpeg 6.
+          - label: ubuntu24
+            container: ubuntu:24.04
+          # Debian trixie ships FFmpeg 7 (libavformat.so.61). Separate
+          # tarball because Ubuntu's .so.60 binary won't load against .61.
+          - label: debian13
+            container: debian:trixie
+    steps:
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          apt-get install --yes --no-install-recommends \
+            ca-certificates git \
+            g++ make cmake pkg-config \
+            libfftw3-dev \
+            libavformat-dev libavcodec-dev libavutil-dev libswresample-dev \
+            file fakeroot dpkg-dev
+
+      - uses: actions/checkout@v4
+
+      # libkeyfinder built as a STATIC library so it gets linked into
+      # the keyfinder-cli binary — the .deb ships one self-contained
+      # ELF with FFmpeg as the only .so dependency. No /usr/local/lib
+      # drop, no ldconfig dance, dpkg-shlibdeps derives Depends:
+      # straight from ldd output.
+      - name: Build libkeyfinder (static)
+        run: |
+          git clone --depth 1 --branch v2.2.6 \
+            https://github.com/mixxxdj/libkeyfinder keyfinder
+          cmake -S keyfinder -B keyfinder/build \
+            -DBUILD_TESTING=OFF \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+          cmake --build keyfinder/build
+          cmake --install keyfinder/build
+
+      - name: Build keyfinder-cli
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCPACK_PACKAGE_VERSION="${version}"
+          cmake --build build
+
+      - name: Package .deb (cpack)
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          cd build
+          # Suffix the package filename with the distro label so a single
+          # release page can carry both ABI variants without colliding.
+          cpack -G DEB -D CPACK_PACKAGE_FILE_NAME="keyfinder-cli_${version}-${{ matrix.label }}_amd64"
+          deb=$(ls keyfinder-cli_*_amd64.deb | head -1)
+          sha256sum "$deb" > "${deb}.sha256"
+          # Quick sanity: print Depends + size so the run log shows what
+          # consumers will pull in.
+          dpkg-deb -I "$deb" | grep -E "Depends|Installed-Size"
+          echo "ASSET=build/${deb}" >> "$GITHUB_ENV"
+          echo "SUMS=build/${deb}.sha256" >> "$GITHUB_ENV"
+
+      - name: Upload to GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ env.ASSET }}
+            ${{ env.SUMS }}
+          generate_release_notes: true
